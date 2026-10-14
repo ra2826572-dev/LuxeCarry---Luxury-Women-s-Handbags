@@ -53,6 +53,16 @@
         "country": "United Kingdom"
       },
       "createdAt": "2026-03-01T10:00:00.000Z"
+    },
+    {
+      "id": "usr_1791976319349",
+      "name": "ghdhthgh",
+      "email": "janjuau824@gmail.com",
+      "passwordHash": "adcf77358afaf1b1da581cd924a774ed09abed84023a529771863839c4b9ab75",
+      "role": "customer",
+      "phone": "",
+      "address": {},
+      "createdAt": "2026-10-14T11:11:59.349Z"
     }
   ],
   "coupons": [
@@ -90,6 +100,9 @@
       "materials": "Hand-buffed box calfskin, champagne gold turnlock",
       "dimensions": "11\" W x 8\" H x 4\" D",
       "careInstructions": "Store in dust bag.",
+      "featured": true,
+      "isNew": true,
+      "isBestSeller": true,
       "active": true,
       "variations": [
         {
@@ -97,7 +110,7 @@
           "colorName": "Champagne Beige",
           "colorCode": "#E6D7C3",
           "sku": "LX-RMA-CHM-01",
-          "stock": 9,
+          "stock": 22,
           "images": [
             "/src/assets/images/bag_sorrento_shoulder_cream_1791892800612.jpg"
           ]
@@ -106,8 +119,8 @@
       "id": "prod_1791896396803",
       "slug": "the-roma-trapeze-bag",
       "reviews": [],
-      "createdAt": "2026-10-13T12:59:56.804Z",
-      "updatedAt": "2026-10-13T12:59:56.849Z"
+      "createdAt": "2026-10-14T10:43:03.825Z",
+      "updatedAt": "2026-10-14T11:12:46.068Z"
     },
     {
       "id": "prod_verona_tote",
@@ -480,6 +493,98 @@
   ],
   "orders": [
     {
+      "id": "ORD-2026-1067",
+      "userId": "usr_1791976319349",
+      "customer": {
+        "fullName": "ghdhthgh",
+        "email": "janjuau824@gmail.com",
+        "phone": "17575",
+        "street": "yujhujy",
+        "city": "ujkyk",
+        "postalCode": "uju",
+        "country": "United Kingdom",
+        "deliveryInstructions": ""
+      },
+      "items": [
+        {
+          "productId": "prod_1791896396803",
+          "productName": "The Roma Trapeze Bag",
+          "variationId": "var_roma_champagne",
+          "colorName": "Champagne Beige",
+          "colorCode": "#E6D7C3",
+          "sku": "LX-RMA-CHM-01",
+          "image": "/src/assets/images/bag_sorrento_shoulder_cream_1791892800612.jpg",
+          "unitPrice": 530,
+          "quantity": 1,
+          "subtotal": 530
+        }
+      ],
+      "subtotal": 530,
+      "discountAmount": 0,
+      "couponCode": null,
+      "shippingCost": 0,
+      "totalAmount": 530,
+      "paymentMethod": "COD",
+      "paymentStatus": "Pending",
+      "status": "Pending",
+      "stockRestored": false,
+      "statusHistory": [
+        {
+          "status": "Pending",
+          "date": "2026-10-14T11:12:46.068Z",
+          "note": "Order received via Cash on Delivery."
+        }
+      ],
+      "createdAt": "2026-10-14T11:12:46.068Z",
+      "updatedAt": "2026-10-14T11:12:46.068Z"
+    },
+    {
+      "id": "ORD-2026-9909",
+      "userId": null,
+      "customer": {
+        "fullName": "Rizwan Ahmad",
+        "email": "ra2826572@gmail.com",
+        "phone": "454545",
+        "street": "31.51269, 73.11017",
+        "city": "fsd",
+        "postalCode": "38000",
+        "country": "United States",
+        "deliveryInstructions": ""
+      },
+      "items": [
+        {
+          "productId": "prod_1791896396803",
+          "productName": "The Roma Trapeze Bag",
+          "variationId": "var_roma_champagne",
+          "colorName": "Champagne Beige",
+          "colorCode": "#E6D7C3",
+          "sku": "LX-RMA-CHM-01",
+          "image": "/src/assets/images/bag_sorrento_shoulder_cream_1791892800612.jpg",
+          "unitPrice": 530,
+          "quantity": 1,
+          "subtotal": 530
+        }
+      ],
+      "subtotal": 530,
+      "discountAmount": 0,
+      "couponCode": null,
+      "shippingCost": 0,
+      "totalAmount": 530,
+      "paymentMethod": "COD",
+      "paymentStatus": "Pending",
+      "status": "Pending",
+      "stockRestored": false,
+      "statusHistory": [
+        {
+          "status": "Pending",
+          "date": "2026-10-14T10:52:44.661Z",
+          "note": "Order received via Cash on Delivery."
+        }
+      ],
+      "createdAt": "2026-10-14T10:52:44.661Z",
+      "updatedAt": "2026-10-14T10:52:44.661Z"
+    },
+    {
       "id": "ORD-2026-8561",
       "userId": null,
       "customer": {
@@ -781,5 +886,34 @@
     "storePhone": "+1 (555) 019-2834",
     "storeAddress": "Via de' Tornabuoni, 14, 50123 Firenze FI, Italy",
     "codEnabled": true
-  }
+  },
+  "emailLogs": [
+    {
+      "id": "email_1791976381491",
+      "orderId": "ORD-2026-1067",
+      "recipientEmail": "janjuau824@gmail.com",
+      "sentAt": "2026-10-14T11:13:01.491Z",
+      "status": "simulated",
+      "subject": "👜 LuxeCarry Order Confirmed #ORD-2026-1067 - Receipt & Screenshot",
+      "screenshotUrl": "/uploads/receipts/order_ORD-2026-1067_1791976381491.png"
+    },
+    {
+      "id": "email_1791976372982",
+      "orderId": "ORD-2026-1067",
+      "recipientEmail": "janjuau824@gmail.com",
+      "sentAt": "2026-10-14T11:12:52.982Z",
+      "status": "simulated",
+      "subject": "👜 LuxeCarry Order Confirmed #ORD-2026-1067 - Receipt & Screenshot",
+      "screenshotUrl": "/uploads/receipts/order_ORD-2026-1067_1791976372982.png"
+    },
+    {
+      "id": "email_1791976238208",
+      "orderId": "ORD-2026-1042",
+      "recipientEmail": "claire@example.com",
+      "sentAt": "2026-10-14T11:10:38.208Z",
+      "status": "simulated",
+      "subject": "👜 LuxeCarry Order Confirmed #ORD-2026-1042 - Receipt & Screenshot",
+      "screenshotUrl": "/uploads/receipts/order_ORD-2026-1042_1791976238207.png"
+    }
+  ]
 }

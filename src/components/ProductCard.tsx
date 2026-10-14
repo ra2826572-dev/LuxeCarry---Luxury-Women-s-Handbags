@@ -20,6 +20,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   // Selected variation index for quick swatch preview
   const [selectedVarIdx, setSelectedVarIdx] = useState(0);
+  const [imgLoadError, setImgLoadError] = useState(false);
   const currentVar = product.variations[selectedVarIdx] || product.variations[0];
 
   const currentPrice =
@@ -30,7 +31,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const originalPrice = currentVar?.price ?? product.price;
   const hasSale = product.salePrice != null || currentVar?.salePrice != null;
 
-  const currentImage = currentVar?.images[0] || '';
+  const currentImage = currentVar?.images?.[0] || '';
   const isOutOfStock = (currentVar?.stock ?? 0) <= 0;
   const wishlisted = isInWishlist(product.id);
 
@@ -51,16 +52,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     >
       {/* Image container */}
       <div className="relative aspect-4/3 w-full bg-[#F5F2EB] overflow-hidden">
-        {currentImage ? (
+        {currentImage && !imgLoadError ? (
           <img
             src={currentImage}
             alt={`${product.name} - ${currentVar?.colorName}`}
             referrerPolicy="no-referrer"
+            onError={() => setImgLoadError(true)}
             className="w-full h-full object-cover object-center group-hover:scale-104 transition-transform duration-500 ease-out"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-neutral-300">
-            <ShoppingBag className="w-12 h-12 stroke-[1]" />
+          <div className="w-full h-full flex flex-col items-center justify-center bg-[#F5F2EB] text-[#8C7A6B]">
+            <ShoppingBag className="w-12 h-12 stroke-[1.2] mb-1.5 text-[#A37B24]" />
+            <span className="text-[11px] font-serif tracking-widest uppercase text-neutral-500 font-medium">
+              {product.name}
+            </span>
           </div>
         )}
 

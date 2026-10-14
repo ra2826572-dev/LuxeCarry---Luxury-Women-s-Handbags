@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import {
+import type {
   Product,
   Order,
   User,
@@ -190,6 +190,39 @@ const initialSeedData: DatabaseSchema = {
     },
   ],
   products: [
+    {
+      id: 'prod_1791896396803',
+      name: 'The Roma Trapeze Bag',
+      slug: 'the-roma-trapeze-bag',
+      category: 'Shoulder Bags',
+      price: 530,
+      salePrice: null,
+      description: 'Sculptural trapeze silhouette with beveled leather gussets and signature brushed champagne-gold rotary clasp.',
+      materials: 'Hand-buffed box calfskin, champagne gold turnlock, bonded suede interior.',
+      dimensions: '11" W x 8" H x 4" D',
+      careInstructions: 'Store in dust bag away from damp and direct heat.',
+      featured: true,
+      isNew: true,
+      isBestSeller: true,
+      active: true,
+      variations: [
+        {
+          id: 'var_roma_champagne',
+          colorName: 'Champagne Beige',
+          colorCode: '#E6D7C3',
+          sku: 'LX-RMA-CHM-01',
+          price: 530,
+          salePrice: null,
+          stock: 22,
+          images: [
+            '/src/assets/images/bag_sorrento_shoulder_cream_1791892800612.jpg',
+          ],
+        },
+      ],
+      reviews: [],
+      createdAt: '2026-10-14T10:43:03.825Z',
+      updatedAt: '2026-10-14T11:12:46.068Z',
+    },
     {
       id: 'prod_verona_tote',
       name: 'The Verona Structured Tote',

@@ -4,7 +4,7 @@ import fs from 'fs';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
 import { db, hashPassword } from './server/db.ts';
-import { Product, OrderStatus, CategoryItem, Coupon, StoreSettings } from './src/types/index.ts';
+import type { Product, OrderStatus, CategoryItem, Coupon, StoreSettings } from './src/types/index.ts';
 import {
   isSupabaseConfigured,
   testSupabaseConnection,
@@ -29,6 +29,13 @@ if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 app.use('/uploads', express.static(UPLOADS_DIR));
+
+// Product and brand assets (serves images reliably in both dev and production)
+const ASSETS_IMAGES_DIR = path.resolve(process.cwd(), 'src', 'assets', 'images');
+if (fs.existsSync(ASSETS_IMAGES_DIR)) {
+  app.use('/src/assets/images', express.static(ASSETS_IMAGES_DIR));
+  app.use('/assets/images', express.static(ASSETS_IMAGES_DIR));
+}
 
 // Simple in-memory session token store (token -> { userId, role, expiresAt })
 interface Session {
@@ -291,7 +298,7 @@ app.get('/api/products', (req: Request, res: Response) => {
     const session = getAuthSession(req);
     const isAdmin = session?.role === 'admin';
     if (!isAdmin) {
-      products = products.filter((p) => p.active);
+      products = products.filter((p) => p.active !== false);
     }
 
     const { category, search, color, sort, minPrice, maxPrice, featured } = req.query;

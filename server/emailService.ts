@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer';
 import fs from 'fs';
 import path from 'path';
-import { Order, StoreSettings, EmailNotificationLog } from '../src/types/index.ts';
+import type { Order, StoreSettings, EmailNotificationLog } from '../src/types/index.ts';
 import { db } from './db.ts';
 
 const RECEIPTS_DIR = path.resolve(process.cwd(), 'uploads', 'receipts');
