@@ -1,0 +1,6 @@
+{
+  "name": "LuxeCarry - Luxury Women's Handbags",
+  "description": "Premium handcrafted women's handbags and luxury leather accessories store with curated collections, color variations, real-time inventory, and secure ordering.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
