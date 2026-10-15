@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Sparkles, Shield, Compass, Star } from 'lucide-react';
+import { ArrowRight, Sparkles, Shield, Compass, Star, Search } from 'lucide-react';
 import { Product, ProductCategory } from '../types/index.ts';
 import { ProductCard } from '../components/ProductCard.tsx';
+import { INITIAL_PRODUCTS } from '../data/initialProducts.ts';
 
 interface HomePageProps {
   onNavigate: (page: string, params?: any) => void;
@@ -41,20 +42,31 @@ const CATEGORIES: { name: ProductCategory; subtitle: string; image: string }[] =
 ];
 
 export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
+  const [loading, setLoading] = useState(false);
+  const [heroSearch, setHeroSearch] = useState('');
 
   useEffect(() => {
     fetch('/api/products')
       .then((r) => r.json())
       .then((data) => {
-        if (Array.isArray(data)) {
+        if (Array.isArray(data) && data.length > 0) {
           setProducts(data);
         }
       })
-      .catch((e) => console.error('Failed to load products:', e))
-      .finally(() => setLoading(false));
+      .catch((e) => {
+        console.warn('Backend products fetch notice, utilizing local atelier products:', e);
+      });
   }, []);
+
+  const handleHeroSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (heroSearch.trim()) {
+      onNavigate('shop', { search: heroSearch.trim() });
+    } else {
+      onNavigate('shop');
+    }
+  };
 
   const featuredProducts = products.filter((p) => p.featured || p.isBestSeller).slice(0, 4);
   const newArrivals = products.filter((p) => p.isNew).slice(0, 4);
@@ -97,6 +109,43 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                   Discover Signature Totes
                 </button>
               </div>
+
+              {/* Find Handbags Quick Search Bar */}
+              <form
+                onSubmit={handleHeroSearchSubmit}
+                className="pt-2 max-w-xl"
+              >
+                <div className="relative flex items-center">
+                  <Search className="w-4 h-4 text-neutral-400 absolute left-4 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={heroSearch}
+                    onChange={(e) => setHeroSearch(e.target.value)}
+                    placeholder="Find handbags by name, color, style (e.g. Verona, Roma, Emerald)..."
+                    className="w-full pl-11 pr-24 py-3 bg-white border border-[#D5CDBD] rounded-full text-xs text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-neutral-900 shadow-xs"
+                  />
+                  <button
+                    type="submit"
+                    className="absolute right-1.5 px-4 py-2 bg-neutral-900 text-white rounded-full text-xs font-semibold hover:bg-black transition-colors"
+                  >
+                    Find
+                  </button>
+                </div>
+                {/* Popular searches */}
+                <div className="flex flex-wrap items-center gap-1.5 mt-2.5 text-[11px] text-neutral-500">
+                  <span className="font-medium text-neutral-600">Quick find:</span>
+                  {['Verona Tote', 'Roma Trapeze', 'Emerald', 'Crossbody', 'Shoulder Bags'].map((term) => (
+                    <button
+                      key={term}
+                      type="button"
+                      onClick={() => onNavigate('shop', { search: term })}
+                      className="px-2.5 py-0.5 bg-white/80 hover:bg-white border border-[#E0D8CB] rounded-full text-neutral-700 hover:text-black transition-colors"
+                    >
+                      {term}
+                    </button>
+                  ))}
+                </div>
+              </form>
 
               {/* Editorial Quality Badges */}
               <div className="pt-6 border-t border-[#EAE3D4] grid grid-cols-3 gap-4 text-xs text-neutral-600">

@@ -33,9 +33,20 @@ app.use('/uploads', express.static(UPLOADS_DIR));
 
 // Product and brand assets (serves images reliably in both dev and production)
 const ASSETS_IMAGES_DIR = path.resolve(process.cwd(), 'src', 'assets', 'images');
+const PUBLIC_IMAGES_DIR = path.resolve(process.cwd(), 'public', 'images');
+const DIST_IMAGES_DIR = path.resolve(process.cwd(), 'dist', 'src', 'assets', 'images');
+
 if (fs.existsSync(ASSETS_IMAGES_DIR)) {
   app.use('/src/assets/images', express.static(ASSETS_IMAGES_DIR));
   app.use('/assets/images', express.static(ASSETS_IMAGES_DIR));
+  app.use('/images', express.static(ASSETS_IMAGES_DIR));
+}
+if (fs.existsSync(PUBLIC_IMAGES_DIR)) {
+  app.use('/images', express.static(PUBLIC_IMAGES_DIR));
+}
+if (fs.existsSync(DIST_IMAGES_DIR)) {
+  app.use('/src/assets/images', express.static(DIST_IMAGES_DIR));
+  app.use('/assets/images', express.static(DIST_IMAGES_DIR));
 }
 
 // Simple in-memory session token store (token -> { userId, role, expiresAt })
@@ -316,13 +327,19 @@ app.get('/api/products', (req: Request, res: Response) => {
 
     if (search && String(search).trim()) {
       const q = String(search).toLowerCase().trim();
-      products = products.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q) ||
-          p.category.toLowerCase().includes(q) ||
-          p.materials.toLowerCase().includes(q)
-      );
+      const terms = q.split(/\s+/).filter(Boolean);
+      products = products.filter((p) => {
+        const fullText = [
+          p.name,
+          p.description,
+          p.category,
+          p.materials,
+          ...p.variations.map((v) => `${v.colorName} ${v.sku}`),
+        ]
+          .join(' ')
+          .toLowerCase();
+        return terms.every((t) => fullText.includes(t)) || terms.some((t) => fullText.includes(t));
+      });
     }
 
     if (color && String(color).trim()) {

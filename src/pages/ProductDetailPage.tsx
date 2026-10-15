@@ -18,6 +18,8 @@ import { useWishlist } from '../context/WishlistContext.tsx';
 import { ProductCard } from '../components/ProductCard.tsx';
 import { ReviewModal } from '../components/ReviewModal.tsx';
 
+import { INITIAL_PRODUCTS } from '../data/initialProducts.ts';
+
 interface ProductDetailPageProps {
   productId: string;
   onNavigate: (page: string, params?: any) => void;
@@ -30,13 +32,21 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
 
-  const [product, setProduct] = useState<Product | null>(null);
-  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const initialFallback = INITIAL_PRODUCTS.find((p) => p.id === productId || p.slug === productId) || null;
+  const [product, setProduct] = useState<Product | null>(initialFallback);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>(() => {
+    if (initialFallback) {
+      return INITIAL_PRODUCTS.filter((p) => p.category === initialFallback.category && p.id !== initialFallback.id).slice(0, 3);
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Variation state
-  const [selectedVariation, setSelectedVariation] = useState<ProductColorVariation | null>(null);
+  const [selectedVariation, setSelectedVariation] = useState<ProductColorVariation | null>(
+    initialFallback?.variations?.[0] || null
+  );
   const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
   const [quantity, setQuantity] = useState<number>(1);
   const [activeTab, setActiveTab] = useState<'materials' | 'dimensions' | 'care' | 'delivery'>('materials');
@@ -48,15 +58,24 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   }, [productId]);
 
   const loadProduct = async () => {
-    setLoading(true);
     setError(null);
+    const localMatch = INITIAL_PRODUCTS.find((p) => p.id === productId || p.slug === productId);
+    if (localMatch && !product) {
+      setProduct(localMatch);
+      if (localMatch.variations && localMatch.variations.length > 0) {
+        setSelectedVariation(localMatch.variations[0]);
+      }
+    }
+
     try {
       const res = await fetch(`/api/products/${productId}`);
-      if (!res.ok) throw new Error('Product not found or unavailable');
+      if (!res.ok) {
+        if (!localMatch) throw new Error('Product not found or unavailable');
+        return;
+      }
       const data: Product = await res.json();
       setProduct(data);
 
-      // Default to first variation
       if (data.variations && data.variations.length > 0) {
         setSelectedVariation(data.variations[0]);
         setActiveImageIndex(0);
@@ -69,9 +88,9 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
         setRelatedProducts(relData.filter((p) => p.id !== data.id).slice(0, 3));
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to load product');
-    } finally {
-      setLoading(false);
+      if (!localMatch) {
+        setError(err.message || 'Failed to load product');
+      }
     }
   };
 

@@ -3,6 +3,7 @@ import { ShoppingBag, Heart, User, Search, Menu, X, Shield } from 'lucide-react'
 import { useCart } from '../context/CartContext.tsx';
 import { useWishlist } from '../context/WishlistContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
+import { INITIAL_PRODUCTS } from '../data/initialProducts.ts';
 
 interface NavbarProps {
   onNavigate: (page: string, params?: any) => void;
@@ -103,13 +104,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
             </button>
           )}
 
-          {/* Search Toggle */}
+          {/* Find & Search Handbags Toggle */}
           <button
             onClick={() => setSearchOpen(!searchOpen)}
-            className="text-neutral-700 hover:text-black p-2 transition-colors relative"
-            aria-label="Search collection"
+            className="flex items-center gap-1.5 bg-[#F2EDE4] hover:bg-[#EAE3D6] text-neutral-800 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-150 border border-[#E0D8CB]"
+            aria-label="Find and search collection"
           >
-            <Search className="w-5 h-5 stroke-[1.5]" />
+            <Search className="w-3.5 h-3.5 stroke-[1.75]" />
+            <span className="hidden sm:inline">Find Handbags</span>
           </button>
 
           {/* Wishlist */}
@@ -155,29 +157,120 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
         </div>
       </div>
 
-      {/* Expandable Search Overlay */}
+      {/* Expandable Live Search Overlay */}
       {searchOpen && (
-        <div className="bg-[#FAF8F5] border-t border-[#EAE6DF] px-4 py-4 animate-in slide-in-from-top duration-200">
-          <form
-            onSubmit={handleSearchSubmit}
-            className="max-w-2xl mx-auto flex items-center gap-3 relative"
-          >
-            <Search className="w-5 h-5 text-neutral-400 absolute left-3.5" />
-            <input
-              type="text"
-              placeholder="Search handcrafted totes, crossbody, shoulder bags, leather types..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              autoFocus
-              className="w-full pl-11 pr-24 py-2.5 bg-white border border-[#DDD7CD] rounded-lg text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-neutral-900"
-            />
-            <button
-              type="submit"
-              className="absolute right-2 top-1.5 bottom-1.5 px-4 bg-neutral-900 text-white rounded text-xs font-medium hover:bg-neutral-800 transition-colors"
-            >
-              Search
-            </button>
-          </form>
+        <div className="bg-[#FAF8F5] border-t border-[#EAE6DF] px-4 py-5 shadow-lg animate-in slide-in-from-top duration-200">
+          <div className="max-w-2xl mx-auto space-y-3">
+            <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 relative">
+              <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Find handbags by silhouette, material, color (e.g. Verona, Roma, Emerald)..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                autoFocus
+                className="w-full pl-10 pr-24 py-3 bg-white border border-[#DDD7CD] rounded-xl text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-neutral-900 shadow-xs"
+              />
+              <button
+                type="submit"
+                className="absolute right-10 top-2 bottom-2 px-3 bg-neutral-900 text-white rounded-lg text-xs font-medium hover:bg-black transition-colors"
+              >
+                Find
+              </button>
+              <button
+                type="button"
+                onClick={() => setSearchOpen(false)}
+                className="p-2 text-neutral-400 hover:text-black transition-colors"
+                aria-label="Close search"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </form>
+
+            {/* Quick Suggestions / Filter Chips */}
+            <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-500 pt-1">
+              <span className="font-medium text-neutral-700">Quick suggestions:</span>
+              {[
+                { label: 'All Handbags', params: { category: 'All' } },
+                { label: 'Tote Bags', params: { category: 'Tote Bags' } },
+                { label: 'Shoulder Bags', params: { category: 'Shoulder Bags' } },
+                { label: 'Crossbody Bags', params: { category: 'Crossbody Bags' } },
+                { label: 'Clutches', params: { category: 'Clutches' } },
+              ].map((chip) => (
+                <button
+                  key={chip.label}
+                  type="button"
+                  onClick={() => {
+                    onNavigate('shop', chip.params);
+                    setSearchOpen(false);
+                  }}
+                  className="px-2.5 py-1 bg-white hover:bg-neutral-100 border border-[#E0D8CB] rounded-full text-neutral-700 transition-colors"
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Live Search Instant Preview Results */}
+            {searchQuery.trim().length > 0 && (
+              <div className="bg-white rounded-xl border border-[#E5E0D6] p-3 shadow-md divide-y divide-[#F0ECE1] mt-2">
+                {INITIAL_PRODUCTS.filter((p) => {
+                  const q = searchQuery.toLowerCase().trim();
+                  const terms = q.split(/\s+/).filter(Boolean);
+                  const text = `${p.name} ${p.category} ${p.materials} ${p.description} ${p.variations.map((v) => v.colorName).join(' ')}`.toLowerCase();
+                  return terms.every((t) => text.includes(t)) || terms.some((t) => text.includes(t));
+                }).slice(0, 4).length > 0 ? (
+                  INITIAL_PRODUCTS.filter((p) => {
+                    const q = searchQuery.toLowerCase().trim();
+                    const terms = q.split(/\s+/).filter(Boolean);
+                    const text = `${p.name} ${p.category} ${p.materials} ${p.description} ${p.variations.map((v) => v.colorName).join(' ')}`.toLowerCase();
+                    return terms.every((t) => text.includes(t)) || terms.some((t) => text.includes(t));
+                  }).slice(0, 4).map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => {
+                        onNavigate('product', { id: p.id });
+                        setSearchOpen(false);
+                      }}
+                      className="w-full py-2.5 px-3 flex items-center gap-3.5 hover:bg-[#FAF8F5] transition-colors rounded-lg text-left"
+                    >
+                      <img
+                        src={p.variations[0]?.images[0] || '/src/assets/images/bag_verona_tote_tan_1791892799506.jpg'}
+                        alt={p.name}
+                        className="w-11 h-11 rounded-md object-cover border border-[#E5DFD4] shrink-0 bg-[#F4EFE6]"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-semibold text-neutral-900 truncate">
+                          {p.name}
+                        </div>
+                        <div className="text-[11px] text-neutral-500">
+                          {p.category} · {p.variations.length} colors available
+                        </div>
+                      </div>
+                      <div className="text-xs font-serif font-bold text-neutral-900 tabular-nums">
+                        ${p.salePrice ?? p.price}
+                      </div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="py-4 text-center text-xs text-neutral-500">
+                    No models match "{searchQuery}". Click{' '}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onNavigate('shop');
+                        setSearchOpen(false);
+                      }}
+                      className="underline font-semibold text-neutral-900"
+                    >
+                      Browse full collection
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
 

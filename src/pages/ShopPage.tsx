@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, X, RotateCcw, Heart } from 'lucide-react';
+import { Search, Filter, X, RotateCcw, Heart, Sparkles } from 'lucide-react';
 import { Product, ProductCategory } from '../types/index.ts';
 import { ProductCard } from '../components/ProductCard.tsx';
 import { useWishlist } from '../context/WishlistContext.tsx';
+import { INITIAL_PRODUCTS, INITIAL_CATEGORIES } from '../data/initialProducts.ts';
 
 interface ShopPageProps {
   onNavigate: (page: string, params?: any) => void;
@@ -16,12 +17,7 @@ interface ShopPageProps {
 
 const DEFAULT_CATEGORIES: string[] = [
   'All',
-  'Tote Bags',
-  'Shoulder Bags',
-  'Crossbody Bags',
-  'Clutches',
-  'Backpacks',
-  'Mini Bags',
+  ...INITIAL_CATEGORIES.map((c) => c.name),
 ];
 
 const COLOR_FILTERS = [
@@ -34,9 +30,9 @@ const COLOR_FILTERS = [
 export const ShopPage: React.FC<ShopPageProps> = ({ onNavigate, initialParams }) => {
   const { wishlist } = useWishlist();
 
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [categoriesList, setCategoriesList] = useState<string[]>(DEFAULT_CATEGORIES);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Filters & Search
@@ -45,7 +41,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({ onNavigate, initialParams })
   );
   const [searchQuery, setSearchQuery] = useState<string>(initialParams?.search || '');
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
-  const [priceRange, setPriceRange] = useState<number>(600);
+  const [priceRange, setPriceRange] = useState<number>(1000);
   const [sortBy, setSortBy] = useState<string>(initialParams?.sort || 'newest');
   const [showWishlistOnly, setShowWishlistOnly] = useState<boolean>(
     Boolean(initialParams?.wishlistOnly)
@@ -73,7 +69,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({ onNavigate, initialParams })
           setCategoriesList(names);
         }
       })
-      .catch((e) => console.error('Failed to load categories:', e));
+      .catch((e) => console.warn('Categories API notice, using atelier catalog categories:', e));
   }, []);
 
   useEffect(() => {
@@ -81,8 +77,6 @@ export const ShopPage: React.FC<ShopPageProps> = ({ onNavigate, initialParams })
   }, [selectedCategory, sortBy]);
 
   const fetchProducts = async () => {
-    setLoading(true);
-    setError(null);
     try {
       const params = new URLSearchParams();
       if (selectedCategory !== 'All') {
@@ -92,11 +86,17 @@ export const ShopPage: React.FC<ShopPageProps> = ({ onNavigate, initialParams })
       const res = await fetch(`/api/products?${params.toString()}`);
       if (!res.ok) throw new Error('Failed to load products');
       const data = await res.json();
-      setProducts(data);
+      if (Array.isArray(data) && data.length > 0) {
+        setProducts(data);
+      }
     } catch (err: any) {
-      setError(err.message || 'Error loading products');
-    } finally {
-      setLoading(false);
+      console.warn('Backend products fetch notice, keeping atelier products dataset:', err);
+      // Filter locally from INITIAL_PRODUCTS
+      if (selectedCategory !== 'All') {
+        setProducts(INITIAL_PRODUCTS.filter((p) => p.category.toLowerCase() === selectedCategory.toLowerCase()));
+      } else {
+        setProducts(INITIAL_PRODUCTS);
+      }
     }
   };
 
@@ -107,16 +107,24 @@ export const ShopPage: React.FC<ShopPageProps> = ({ onNavigate, initialParams })
       return false;
     }
 
-    // Search query
+    // Search query - smart multi-term matching
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
-      const match =
-        p.name.toLowerCase().includes(q) ||
-        p.description.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q) ||
-        p.materials.toLowerCase().includes(q) ||
-        p.variations.some((v) => v.colorName.toLowerCase().includes(q) || v.sku.toLowerCase().includes(q));
-      if (!match) return false;
+      const terms = q.split(/\s+/).filter(Boolean);
+      const pText = [
+        p.name,
+        p.description,
+        p.category,
+        p.materials,
+        ...p.variations.map((v) => `${v.colorName} ${v.sku}`),
+      ]
+        .join(' ')
+        .toLowerCase();
+
+      // Check if all or any significant term matches
+      const allTermsMatch = terms.every((t) => pText.includes(t));
+      const anyTermMatch = terms.some((t) => pText.includes(t));
+      if (!allTermsMatch && !anyTermMatch) return false;
     }
 
     // Color filter
@@ -140,7 +148,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({ onNavigate, initialParams })
     setSelectedCategory('All');
     setSearchQuery('');
     setSelectedColor(null);
-    setPriceRange(600);
+    setPriceRange(1000);
     setShowWishlistOnly(false);
     setSortBy('newest');
   };
@@ -149,7 +157,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({ onNavigate, initialParams })
     selectedCategory !== 'All' ||
     searchQuery.trim() !== '' ||
     selectedColor !== null ||
-    priceRange < 600 ||
+    priceRange < 1000 ||
     showWishlistOnly;
 
   return (
@@ -330,15 +338,15 @@ export const ShopPage: React.FC<ShopPageProps> = ({ onNavigate, initialParams })
             <input
               type="range"
               min="200"
-              max="600"
-              step="10"
+              max="1000"
+              step="25"
               value={priceRange}
               onChange={(e) => setPriceRange(Number(e.target.value))}
               className="w-full accent-neutral-900 cursor-pointer"
             />
             <div className="flex justify-between text-[11px] text-neutral-400 mt-1 font-mono">
               <span>$200</span>
-              <span>$600</span>
+              <span>$1,000+</span>
             </div>
           </div>
 

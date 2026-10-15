@@ -22,6 +22,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const [selectedVarIdx, setSelectedVarIdx] = useState(0);
   const [imgLoadError, setImgLoadError] = useState(false);
   const currentVar = product.variations[selectedVarIdx] || product.variations[0];
+  const [imageSrc, setImageSrc] = useState<string>(currentVar?.images?.[0] || '');
+
+  React.useEffect(() => {
+    setImageSrc(currentVar?.images?.[0] || '');
+    setImgLoadError(false);
+  }, [currentVar]);
+
+  const handleImageError = () => {
+    if (imageSrc && imageSrc.includes('/src/assets/images/')) {
+      setImageSrc(imageSrc.replace('/src/assets/images/', '/images/'));
+    } else if (imageSrc && imageSrc.includes('/images/')) {
+      setImageSrc(imageSrc.replace('/images/', '/src/assets/images/'));
+    } else {
+      setImgLoadError(true);
+    }
+  };
 
   const currentPrice =
     currentVar?.salePrice ??
@@ -31,7 +47,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const originalPrice = currentVar?.price ?? product.price;
   const hasSale = product.salePrice != null || currentVar?.salePrice != null;
 
-  const currentImage = currentVar?.images?.[0] || '';
   const isOutOfStock = (currentVar?.stock ?? 0) <= 0;
   const wishlisted = isInWishlist(product.id);
 
@@ -52,12 +67,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     >
       {/* Image container */}
       <div className="relative aspect-4/3 w-full bg-[#F5F2EB] overflow-hidden">
-        {currentImage && !imgLoadError ? (
+        {imageSrc && !imgLoadError ? (
           <img
-            src={currentImage}
+            src={imageSrc}
             alt={`${product.name} - ${currentVar?.colorName}`}
             referrerPolicy="no-referrer"
-            onError={() => setImgLoadError(true)}
+            onError={handleImageError}
             className="w-full h-full object-cover object-center group-hover:scale-104 transition-transform duration-500 ease-out"
           />
         ) : (
