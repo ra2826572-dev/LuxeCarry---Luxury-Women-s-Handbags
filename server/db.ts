@@ -78,7 +78,7 @@ const initialSeedData: DatabaseSchema = {
       slug: 'backpacks',
       description: 'Streamlined luxury leather backpacks for executive day-to-day transit.',
       active: true,
-      image: '/src/assets/images/bag_monaco_crossbody_black_1791892801456.jpg',
+      image: '/src/assets/images/geneva_backpack_black_1792062891437.jpg',
     },
     {
       id: 'cat_mini',
@@ -86,7 +86,7 @@ const initialSeedData: DatabaseSchema = {
       slug: 'mini-bags',
       description: 'Chic miniature statement sculptures with delicate top handles and straps.',
       active: true,
-      image: '/src/assets/images/bag_sorrento_shoulder_cream_1791892800612.jpg',
+      image: '/src/assets/images/capri_mini_bag_1792062892261.jpg',
     },
   ],
   users: [
@@ -249,7 +249,6 @@ const initialSeedData: DatabaseSchema = {
           stock: 14,
           images: [
             '/src/assets/images/bag_verona_tote_tan_1791892799506.jpg',
-            '/src/assets/images/hero_luxe_carry_1791892799388.jpg',
           ],
         },
         {
@@ -261,8 +260,7 @@ const initialSeedData: DatabaseSchema = {
           salePrice: 445,
           stock: 8,
           images: [
-            '/src/assets/images/bag_monaco_crossbody_black_1791892801456.jpg',
-            '/src/assets/images/hero_luxe_carry_1791892799388.jpg',
+            '/src/assets/images/verona_tote_black_1792062754278.jpg',
           ],
         },
         {
@@ -274,8 +272,7 @@ const initialSeedData: DatabaseSchema = {
           salePrice: null,
           stock: 5,
           images: [
-            '/src/assets/images/bag_sorrento_shoulder_cream_1791892800612.jpg',
-            '/src/assets/images/hero_luxe_carry_1791892799388.jpg',
+            '/src/assets/images/verona_tote_cream_1792062753600.jpg',
           ],
         },
       ],
@@ -326,7 +323,6 @@ const initialSeedData: DatabaseSchema = {
           stock: 12,
           images: [
             '/src/assets/images/bag_monaco_crossbody_black_1791892801456.jpg',
-            '/src/assets/images/hero_luxe_carry_1791892799388.jpg',
           ],
         },
         {
@@ -338,8 +334,7 @@ const initialSeedData: DatabaseSchema = {
           salePrice: 380,
           stock: 6,
           images: [
-            '/src/assets/images/bag_elysee_clutch_emerald_1791892800669.jpg',
-            '/src/assets/images/hero_luxe_carry_1791892799388.jpg',
+            '/src/assets/images/monaco_crossbody_emerald_1792062753336.jpg',
           ],
         },
         {
@@ -349,9 +344,9 @@ const initialSeedData: DatabaseSchema = {
           sku: 'LX-MNC-CGN-03',
           price: 380,
           salePrice: null,
-          stock: 0,
+          stock: 4,
           images: [
-            '/src/assets/images/bag_verona_tote_tan_1791892799506.jpg',
+            '/src/assets/images/monaco_crossbody_tan_1792062756301.jpg',
           ],
         },
       ],
@@ -394,19 +389,6 @@ const initialSeedData: DatabaseSchema = {
           stock: 10,
           images: [
             '/src/assets/images/bag_sorrento_shoulder_cream_1791892800612.jpg',
-            '/src/assets/images/hero_luxe_carry_1791892799388.jpg',
-          ],
-        },
-        {
-          id: 'var_sorrento_tan',
-          colorName: 'Tuscan Tan',
-          colorCode: '#A56534',
-          sku: 'LX-SRN-TAN-02',
-          price: 440,
-          salePrice: 395,
-          stock: 7,
-          images: [
-            '/src/assets/images/bag_verona_tote_tan_1791892799506.jpg',
           ],
         },
         {
@@ -418,7 +400,7 @@ const initialSeedData: DatabaseSchema = {
           salePrice: null,
           stock: 4,
           images: [
-            '/src/assets/images/bag_monaco_crossbody_black_1791892801456.jpg',
+            '/src/assets/images/sorrento_shoulder_black_1792062756532.jpg',
           ],
         },
       ],
@@ -472,19 +454,7 @@ const initialSeedData: DatabaseSchema = {
           salePrice: null,
           stock: 11,
           images: [
-            '/src/assets/images/bag_monaco_crossbody_black_1791892801456.jpg',
-          ],
-        },
-        {
-          id: 'var_elysee_ivory',
-          colorName: 'Pearl White',
-          colorCode: '#FAF8F5',
-          sku: 'LX-ELY-IVR-03',
-          price: 340,
-          salePrice: null,
-          stock: 3,
-          images: [
-            '/src/assets/images/bag_sorrento_shoulder_cream_1791892800612.jpg',
+            '/src/assets/images/elysee_clutch_black_1792062894931.jpg',
           ],
         },
       ],
@@ -526,7 +496,7 @@ const initialSeedData: DatabaseSchema = {
           salePrice: 410,
           stock: 6,
           images: [
-            '/src/assets/images/bag_monaco_crossbody_black_1791892801456.jpg',
+            '/src/assets/images/geneva_backpack_black_1792062891437.jpg',
           ],
         },
         {
@@ -538,7 +508,7 @@ const initialSeedData: DatabaseSchema = {
           salePrice: 410,
           stock: 5,
           images: [
-            '/src/assets/images/bag_verona_tote_tan_1791892799506.jpg',
+            '/src/assets/images/geneva_backpack_tan_1792062892423.jpg',
           ],
         },
       ],
@@ -571,19 +541,7 @@ const initialSeedData: DatabaseSchema = {
           salePrice: null,
           stock: 8,
           images: [
-            '/src/assets/images/bag_sorrento_shoulder_cream_1791892800612.jpg',
-          ],
-        },
-        {
-          id: 'var_capri_emerald',
-          colorName: 'Malachite Green',
-          colorCode: '#154A36',
-          sku: 'LX-CPR-MLC-02',
-          price: 290,
-          salePrice: null,
-          stock: 4,
-          images: [
-            '/src/assets/images/bag_elysee_clutch_emerald_1791892800669.jpg',
+            '/src/assets/images/capri_mini_bag_1792062892261.jpg',
           ],
         },
       ],

@@ -97,6 +97,7 @@ function MainRouter() {
         {currentPage === 'product' && (
           <ProductDetailPage
             productId={pageParams.id || 'prod_verona_tote'}
+            initialVariationId={pageParams.variationId}
             onNavigate={navigateTo}
           />
         )}

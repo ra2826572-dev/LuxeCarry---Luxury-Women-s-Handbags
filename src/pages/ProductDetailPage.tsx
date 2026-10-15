@@ -22,11 +22,13 @@ import { INITIAL_PRODUCTS } from '../data/initialProducts.ts';
 
 interface ProductDetailPageProps {
   productId: string;
+  initialVariationId?: string;
   onNavigate: (page: string, params?: any) => void;
 }
 
 export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   productId,
+  initialVariationId,
   onNavigate,
 }) => {
   const { addToCart } = useCart();
@@ -44,10 +46,16 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   // Variation state
-  const [selectedVariation, setSelectedVariation] = useState<ProductColorVariation | null>(
-    initialFallback?.variations?.[0] || null
-  );
+  const [selectedVariation, setSelectedVariation] = useState<ProductColorVariation | null>(() => {
+    if (!initialFallback?.variations?.length) return null;
+    if (initialVariationId) {
+      const found = initialFallback.variations.find((v) => v.id === initialVariationId);
+      if (found) return found;
+    }
+    return initialFallback.variations[0];
+  });
   const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
+  const [imgLoadError, setImgLoadError] = useState(false);
   const [quantity, setQuantity] = useState<number>(1);
   const [activeTab, setActiveTab] = useState<'materials' | 'dimensions' | 'care' | 'delivery'>('materials');
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
@@ -77,8 +85,15 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
       setProduct(data);
 
       if (data.variations && data.variations.length > 0) {
-        setSelectedVariation(data.variations[0]);
-        setActiveImageIndex(0);
+        setSelectedVariation((prev) => {
+          if (prev) {
+            const match = data.variations.find(
+              (v) => v.id === prev.id || v.colorName.toLowerCase() === prev.colorName.toLowerCase()
+            );
+            if (match) return match;
+          }
+          return data.variations[0];
+        });
       }
 
       // Fetch related in same category
@@ -129,10 +144,10 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     );
   }
 
-  // Active variation details
-  const currentImages = selectedVariation.images.length > 0
+  // Active variation details - Always retain the same bag silhouette
+  const currentImages = (selectedVariation.images && selectedVariation.images.length > 0)
     ? selectedVariation.images
-    : ['/src/assets/images/hero_luxe_carry_1791892799388.jpg'];
+    : (product.variations?.[0]?.images?.length ? product.variations[0].images : ['/src/assets/images/bag_verona_tote_tan_1791892799506.jpg']);
 
   const currentPrice =
     selectedVariation.salePrice ??
@@ -148,10 +163,31 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const isOutOfStock = selectedVariation.stock <= 0;
   const wishlisted = isInWishlist(product.id);
 
+  const primaryImg = currentImages[activeImageIndex] || currentImages[0] || '';
+  const [resolvedSrc, setResolvedSrc] = useState<string>(primaryImg);
+
+  useEffect(() => {
+    setResolvedSrc(primaryImg);
+    setImgLoadError(false);
+  }, [primaryImg]);
+
+  const handleHeroImgError = () => {
+    if (resolvedSrc && resolvedSrc.includes('/src/assets/images/')) {
+      setResolvedSrc(resolvedSrc.replace('/src/assets/images/', '/images/'));
+    } else if (resolvedSrc && resolvedSrc.includes('/images/')) {
+      setResolvedSrc(resolvedSrc.replace('/images/', '/src/assets/images/'));
+    } else if (product.variations?.[0]?.images?.[0] && resolvedSrc !== product.variations[0].images[0]) {
+      setResolvedSrc(product.variations[0].images[0]);
+    } else {
+      setImgLoadError(true);
+    }
+  };
+
   const handleColorChange = (variation: ProductColorVariation) => {
     setSelectedVariation(variation);
     setActiveImageIndex(0); // Reset to primary photo for this color
     setQuantity(1); // Reset requested quantity to 1
+    setImgLoadError(false);
   };
 
   const handleAddToCart = () => {
@@ -195,12 +231,22 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
         <div className="lg:col-span-7 space-y-4">
           {/* Main Hero Viewer */}
           <div className="relative aspect-4/3 w-full bg-[#F5F2EB] rounded-2xl overflow-hidden border border-[#EDE7DC] shadow-sm">
-            <img
-              src={currentImages[activeImageIndex] || currentImages[0]}
-              alt={`${product.name} in ${selectedVariation.colorName}`}
-              referrerPolicy="no-referrer"
-              className="w-full h-full object-cover object-center transition-all duration-300"
-            />
+            {resolvedSrc && !imgLoadError ? (
+              <img
+                src={resolvedSrc}
+                alt={`${product.name} in ${selectedVariation.colorName}`}
+                referrerPolicy="no-referrer"
+                onError={handleHeroImgError}
+                className="w-full h-full object-cover object-center transition-all duration-300"
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center bg-[#F5F2EB] text-[#8C7A6B]">
+                <ShoppingBag className="w-16 h-16 stroke-[1.2] mb-2 text-[#A37B24]" />
+                <span className="text-xs font-serif tracking-widest uppercase text-neutral-600 font-medium">
+                  {product.name} — {selectedVariation.colorName}
+                </span>
+              </div>
+            )}
 
             {/* Out of stock watermark */}
             {isOutOfStock && (

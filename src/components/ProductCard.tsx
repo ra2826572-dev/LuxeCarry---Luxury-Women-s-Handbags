@@ -51,7 +51,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const wishlisted = isInWishlist(product.id);
 
   const handleCardClick = () => {
-    onNavigate('product', { id: product.id });
+    onNavigate('product', { id: product.id, variationId: currentVar?.id });
   };
 
   const handleQuickAdd = (e: React.MouseEvent) => {
@@ -181,7 +181,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             {product.variations.map((v, idx) => (
               <button
                 key={v.id}
-                onClick={() => setSelectedVarIdx(idx)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedVarIdx(idx);
+                }}
                 className={`w-4 h-4 rounded-full transition-all relative ${
                   selectedVarIdx === idx
                     ? 'ring-2 ring-neutral-900 ring-offset-1 scale-110'
