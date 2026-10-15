@@ -233,18 +233,32 @@ export async function sendOrderReceiptEmail(params: {
     });
   }
 
+  let smtpError: string | undefined;
+
   // If live SMTP credentials exist, attempt real sending
   if (smtpHost && smtpUser && smtpPass) {
     try {
-      const transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpPort === 465,
-        auth: {
-          user: smtpUser,
-          pass: smtpPass,
-        },
-      });
+      const isGmail = smtpHost.toLowerCase().includes('gmail');
+      const transporter = isGmail
+        ? nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+              user: smtpUser,
+              pass: smtpPass,
+            },
+          })
+        : nodemailer.createTransport({
+            host: smtpHost,
+            port: smtpPort,
+            secure: smtpPort === 465,
+            auth: {
+              user: smtpUser,
+              pass: smtpPass,
+            },
+            tls: {
+              rejectUnauthorized: false,
+            },
+          });
 
       await transporter.sendMail({
         from: `"LuxeCarry Atelier" <${senderEmail}>`,
@@ -271,10 +285,11 @@ export async function sendOrderReceiptEmail(params: {
         recipientEmail,
         orderId: order.id,
         screenshotUrl: screenshotPublicUrl,
-        message: `Official receipt and screenshot sent to ${recipientEmail}`,
+        message: `Official receipt and screenshot sent live to ${recipientEmail}`,
       };
     } catch (err: any) {
-      console.error('SMTP email sending failed, recording fallback dispatch:', err.message);
+      smtpError = err.message || 'SMTP transmission error';
+      console.error('SMTP email sending failed, recording fallback dispatch:', smtpError);
       // Fall through to simulated record so user experience is not disrupted
     }
   }
@@ -297,6 +312,85 @@ export async function sendOrderReceiptEmail(params: {
     recipientEmail,
     orderId: order.id,
     screenshotUrl: screenshotPublicUrl,
-    message: `Receipt and order screenshot dispatched to ${recipientEmail}`,
+    message: smtpError
+      ? `Receipt logged for ${recipientEmail} (SMTP Notice: ${smtpError})`
+      : `Receipt and order screenshot dispatched to ${recipientEmail}`,
+    error: smtpError,
   };
 }
+
+export async function testSmtpConnection(params: {
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpUser?: string;
+  smtpPass?: string;
+  smtpSender?: string;
+  testEmail: string;
+}): Promise<{ success: boolean; message: string; error?: string }> {
+  const { smtpHost, smtpPort, smtpUser, smtpPass, smtpSender, testEmail } = params;
+
+  if (!smtpHost || !smtpUser || !smtpPass) {
+    return {
+      success: false,
+      message: 'Missing SMTP credentials. Please provide Host, User, and Password.',
+    };
+  }
+
+  try {
+    const isGmail = smtpHost.toLowerCase().includes('gmail');
+    const port = Number(smtpPort) || 587;
+    const transporter = isGmail
+      ? nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: smtpUser,
+            pass: smtpPass,
+          },
+        })
+      : nodemailer.createTransport({
+          host: smtpHost,
+          port,
+          secure: port === 465,
+          auth: {
+            user: smtpUser,
+            pass: smtpPass,
+          },
+          tls: {
+            rejectUnauthorized: false,
+          },
+        });
+
+    // Verify connection configuration
+    await transporter.verify();
+
+    // Send test email
+    await transporter.sendMail({
+      from: `"LuxeCarry Atelier" <${smtpSender || smtpUser}>`,
+      to: testEmail,
+      subject: '✅ LuxeCarry Atelier SMTP Test Email',
+      html: `
+        <div style="font-family: sans-serif; padding: 24px; max-width: 500px; background: #FAF8F5; border: 1px solid #E5DFD4; border-radius: 8px;">
+          <h2 style="color: #111; margin-top: 0;">LuxeCarry Atelier SMTP Verified</h2>
+          <p style="color: #444; font-size: 14px;">Your SMTP configuration is active and communicating successfully with the mail server.</p>
+          <div style="background: #fff; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 12px; color: #2e7d32;">
+            Status: Ready for live customer order dispatches
+          </div>
+          <p style="font-size: 11px; color: #888; margin-top: 20px;">Sent from LuxeCarry Atelier System</p>
+        </div>
+      `,
+    });
+
+    return {
+      success: true,
+      message: `Test email successfully sent to ${testEmail}! Your SMTP configuration is verified.`,
+    };
+  } catch (err: any) {
+    console.error('SMTP test verification error:', err);
+    return {
+      success: false,
+      message: err.message || 'SMTP verification failed.',
+      error: err.message,
+    };
+  }
+}
+

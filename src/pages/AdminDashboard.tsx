@@ -82,6 +82,44 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
   const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null);
   const [emailLogs, setEmailLogs] = useState<EmailNotificationLog[]>([]);
 
+  // SMTP Testing states
+  const [smtpTestEmail, setSmtpTestEmail] = useState('ra2826572@gmail.com');
+  const [smtpTesting, setSmtpTesting] = useState(false);
+  const [smtpTestResult, setSmtpTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [showSmtpPass, setShowSmtpPass] = useState(false);
+
+  const handleTestSmtp = async () => {
+    if (!smtpTestEmail.trim()) return;
+    setSmtpTesting(true);
+    setSmtpTestResult(null);
+    try {
+      const res = await fetch('/api/admin/test-smtp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('luxecarry_token')}`,
+        },
+        body: JSON.stringify({
+          smtpHost: storeSettings?.smtpHost,
+          smtpPort: storeSettings?.smtpPort,
+          smtpUser: storeSettings?.smtpUser,
+          smtpPass: storeSettings?.smtpPass,
+          smtpSender: storeSettings?.smtpSender,
+          testEmail: smtpTestEmail.trim(),
+        }),
+      });
+      const data = await res.json();
+      setSmtpTestResult({
+        success: res.ok,
+        message: data.message || (res.ok ? 'Test email dispatched!' : data.error || 'Failed to send test email'),
+      });
+    } catch (err: any) {
+      setSmtpTestResult({ success: false, message: err.message || 'Network error during SMTP test' });
+    } finally {
+      setSmtpTesting(false);
+    }
+  };
+
   // Loading & notification states
   const [loading, setLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -1732,10 +1770,168 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                   </label>
                 </div>
 
+                {/* SMTP Email Server Configuration */}
+                <div className="pt-6 border-t border-[#EDE8DF] space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-900 flex items-center gap-1.5">
+                        <Mail className="w-3.5 h-3.5 text-[#D4AF37]" />
+                        SMTP Live Email Delivery Configuration (Optional)
+                      </h3>
+                      <p className="text-[11px] text-neutral-500 mt-0.5">
+                        Configure SMTP (e.g. Gmail App Password, SendGrid, or custom mail server) to deliver receipts directly to recipient inboxes. If blank, receipt screenshots are reliably saved to disk and logged for instant download.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1">
+                        SMTP Host
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="smtp.gmail.com"
+                        value={storeSettings.smtpHost || ''}
+                        onChange={(e) =>
+                          setStoreSettings({
+                            ...storeSettings,
+                            smtpHost: e.target.value,
+                          })
+                        }
+                        className="w-full px-3.5 py-2 bg-[#FAF8F5] border border-[#DDD7CD] rounded-md text-xs font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1">
+                        SMTP Port
+                      </label>
+                      <input
+                        type="number"
+                        placeholder="587 (or 465)"
+                        value={storeSettings.smtpPort || ''}
+                        onChange={(e) =>
+                          setStoreSettings({
+                            ...storeSettings,
+                            smtpPort: e.target.value ? Number(e.target.value) : undefined,
+                          })
+                        }
+                        className="w-full px-3.5 py-2 bg-[#FAF8F5] border border-[#DDD7CD] rounded-md text-xs font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1">
+                        Sender From Address
+                      </label>
+                      <input
+                        type="email"
+                        placeholder="concierge@luxecarry.com"
+                        value={storeSettings.smtpSender || ''}
+                        onChange={(e) =>
+                          setStoreSettings({
+                            ...storeSettings,
+                            smtpSender: e.target.value,
+                          })
+                        }
+                        className="w-full px-3.5 py-2 bg-[#FAF8F5] border border-[#DDD7CD] rounded-md text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1">
+                        SMTP Username / Email
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="your-email@gmail.com"
+                        value={storeSettings.smtpUser || ''}
+                        onChange={(e) =>
+                          setStoreSettings({
+                            ...storeSettings,
+                            smtpUser: e.target.value,
+                          })
+                        }
+                        className="w-full px-3.5 py-2 bg-[#FAF8F5] border border-[#DDD7CD] rounded-md text-xs"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1">
+                        SMTP Password / App Password
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showSmtpPass ? 'text' : 'password'}
+                          placeholder="••••••••••••••••"
+                          value={storeSettings.smtpPass || ''}
+                          onChange={(e) =>
+                            setStoreSettings({
+                              ...storeSettings,
+                              smtpPass: e.target.value,
+                            })
+                          }
+                          className="w-full px-3.5 py-2 bg-[#FAF8F5] border border-[#DDD7CD] rounded-md text-xs font-mono"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowSmtpPass(!showSmtpPass)}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 text-[10px] font-medium"
+                        >
+                          {showSmtpPass ? 'Hide' : 'Show'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Send Test Email Card */}
+                  <div className="p-3.5 bg-[#FAF8F4] border border-[#EAE4D7] rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                    <div className="flex-1">
+                      <span className="font-semibold text-neutral-900 block text-xs">
+                        Test Live SMTP Delivery
+                      </span>
+                      <p className="text-[11px] text-neutral-500">
+                        Dispatch a test verification email to ensure your mail host credentials are functioning properly.
+                      </p>
+                      {smtpTestResult && (
+                        <div
+                          className={`mt-2 p-2 rounded text-xs ${
+                            smtpTestResult.success
+                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                              : 'bg-red-50 text-red-700 border border-red-200'
+                          }`}
+                        >
+                          {smtpTestResult.message}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <input
+                        type="email"
+                        placeholder="Test email address"
+                        value={smtpTestEmail}
+                        onChange={(e) => setSmtpTestEmail(e.target.value)}
+                        className="px-2.5 py-1.5 bg-white border border-[#DDD7CD] rounded-md text-xs font-mono w-full sm:w-56"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleTestSmtp}
+                        disabled={smtpTesting || !smtpTestEmail}
+                        className="px-3 py-1.5 bg-neutral-900 text-white rounded-md text-xs font-semibold hover:bg-black transition-colors shrink-0 disabled:opacity-50 cursor-pointer"
+                      >
+                        {smtpTesting ? 'Testing...' : 'Send Test'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="pt-4 border-t border-[#EDE8DF] flex justify-end">
                   <button
                     type="submit"
-                    className="px-6 py-2.5 bg-neutral-900 text-white rounded-full text-xs font-semibold hover:bg-black transition-colors"
+                    className="px-6 py-2.5 bg-neutral-900 text-white rounded-full text-xs font-semibold hover:bg-black transition-colors cursor-pointer"
                   >
                     Save Store Settings
                   </button>

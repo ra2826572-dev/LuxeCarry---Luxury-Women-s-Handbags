@@ -23,7 +23,7 @@ interface AccountPageProps {
 export const AccountPage: React.FC<AccountPageProps> = ({ onNavigate, initialTab }) => {
   const { user, login, register, logout, updateProfile, isAdmin } = useAuth();
 
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [authMode, setAuthMode] = useState<'login' | 'register' | 'reset'>('login');
   const [activeTab, setActiveTab] = useState<'profile' | 'orders'>(initialTab || 'orders');
 
   // Form states
@@ -32,6 +32,7 @@ export const AccountPage: React.FC<AccountPageProps> = ({ onNavigate, initialTab
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [authSuccess, setAuthSuccess] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
 
   // Profile edit states
@@ -80,6 +81,7 @@ export const AccountPage: React.FC<AccountPageProps> = ({ onNavigate, initialTab
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
+    setAuthSuccess(null);
     setAuthLoading(true);
     const res = await login(email, password);
     setAuthLoading(false);
@@ -91,11 +93,41 @@ export const AccountPage: React.FC<AccountPageProps> = ({ onNavigate, initialTab
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
+    setAuthSuccess(null);
     setAuthLoading(true);
     const res = await register(name, email, password);
     setAuthLoading(false);
     if (!res.success) {
       setAuthError(res.error || 'Registration failed');
+    }
+  };
+
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    setAuthSuccess(null);
+    setAuthLoading(true);
+    try {
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, newPassword: password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setAuthError(data.error || 'Failed to update password');
+      } else {
+        setAuthSuccess('Password updated successfully! Logging you in...');
+        const loginRes = await login(email, password);
+        if (!loginRes.success) {
+          setAuthError('Password was updated. Please sign in with your new password.');
+          setAuthMode('login');
+        }
+      }
+    } catch (err: any) {
+      setAuthError(err.message || 'Password update failed');
+    } finally {
+      setAuthLoading(false);
     }
   };
 
@@ -124,6 +156,7 @@ export const AccountPage: React.FC<AccountPageProps> = ({ onNavigate, initialTab
 
   const fillUserEmail = () => {
     setEmail('ra2826572@gmail.com');
+    setPassword('59115911');
   };
 
   if (!user) {
@@ -135,11 +168,64 @@ export const AccountPage: React.FC<AccountPageProps> = ({ onNavigate, initialTab
               Connoisseur Portal
             </span>
             <h1 className="text-2xl sm:text-3xl font-serif font-bold text-neutral-900 mt-1">
-              {authMode === 'login' ? 'Sign In with Your Email' : 'Create Your Account'}
+              {authMode === 'login' && 'Sign In with Your Email'}
+              {authMode === 'register' && 'Create Your Account'}
+              {authMode === 'reset' && 'Reset Account Password'}
             </h1>
             <p className="text-xs text-neutral-500 mt-1">
-              Manage your orders, saved addresses, and private commission privileges with your own email.
+              {authMode === 'reset'
+                ? 'Enter your email and choose a new password to recover access immediately.'
+                : 'Manage your orders, saved addresses, and private commission privileges with your own email.'}
             </p>
+          </div>
+
+          {/* Tab selector */}
+          <div className="flex border-b border-[#EAE4D7] text-xs">
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode('login');
+                setAuthError(null);
+                setAuthSuccess(null);
+              }}
+              className={`flex-1 py-2.5 font-semibold text-center border-b-2 transition-colors ${
+                authMode === 'login'
+                  ? 'border-neutral-900 text-neutral-900'
+                  : 'border-transparent text-neutral-400 hover:text-neutral-700'
+              }`}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode('register');
+                setAuthError(null);
+                setAuthSuccess(null);
+              }}
+              className={`flex-1 py-2.5 font-semibold text-center border-b-2 transition-colors ${
+                authMode === 'register'
+                  ? 'border-neutral-900 text-neutral-900'
+                  : 'border-transparent text-neutral-400 hover:text-neutral-700'
+              }`}
+            >
+              Create Account
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode('reset');
+                setAuthError(null);
+                setAuthSuccess(null);
+              }}
+              className={`flex-1 py-2.5 font-semibold text-center border-b-2 transition-colors ${
+                authMode === 'reset'
+                  ? 'border-neutral-900 text-neutral-900'
+                  : 'border-transparent text-neutral-400 hover:text-neutral-700'
+              }`}
+            >
+              Reset Password
+            </button>
           </div>
 
           {/* Quick Credential Test Helper */}
@@ -177,11 +263,29 @@ export const AccountPage: React.FC<AccountPageProps> = ({ onNavigate, initialTab
 
           {authError && (
             <div className="p-3 bg-red-50 text-red-700 text-xs rounded-md border border-red-200">
-              {authError}
+              <p>{authError}</p>
+              {authError.includes('already exists') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode('reset');
+                    setAuthError(null);
+                  }}
+                  className="mt-1 text-xs text-[#A37B24] font-semibold hover:underline block"
+                >
+                  Forgot your password? Click here to reset it for this email
+                </button>
+              )}
             </div>
           )}
 
-          {authMode === 'login' ? (
+          {authSuccess && (
+            <div className="p-3 bg-emerald-50 text-emerald-800 text-xs rounded-md border border-emerald-200">
+              {authSuccess}
+            </div>
+          )}
+
+          {authMode === 'login' && (
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-700 mb-1">
@@ -198,9 +302,21 @@ export const AccountPage: React.FC<AccountPageProps> = ({ onNavigate, initialTab
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-700 mb-1">
-                  Password
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-700">
+                    Password
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMode('reset');
+                      setAuthError(null);
+                    }}
+                    className="text-[11px] text-[#A37B24] hover:underline"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -225,12 +341,14 @@ export const AccountPage: React.FC<AccountPageProps> = ({ onNavigate, initialTab
               <button
                 type="submit"
                 disabled={authLoading}
-                className="w-full py-3.5 bg-neutral-900 text-white rounded-full text-xs font-semibold tracking-wider hover:bg-black transition-colors disabled:opacity-50"
+                className="w-full py-3.5 bg-neutral-900 text-white rounded-full text-xs font-semibold tracking-wider hover:bg-black transition-colors disabled:opacity-50 cursor-pointer"
               >
                 {authLoading ? 'Signing In...' : 'Sign In'}
               </button>
             </form>
-          ) : (
+          )}
+
+          {authMode === 'register' && (
             <form onSubmit={handleRegisterSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-700 mb-1">
@@ -278,15 +396,67 @@ export const AccountPage: React.FC<AccountPageProps> = ({ onNavigate, initialTab
               <button
                 type="submit"
                 disabled={authLoading}
-                className="w-full py-3.5 bg-neutral-900 text-white rounded-full text-xs font-semibold tracking-wider hover:bg-black transition-colors disabled:opacity-50"
+                className="w-full py-3.5 bg-neutral-900 text-white rounded-full text-xs font-semibold tracking-wider hover:bg-black transition-colors disabled:opacity-50 cursor-pointer"
               >
                 {authLoading ? 'Creating Account...' : 'Create Atelier Account'}
               </button>
             </form>
           )}
 
+          {authMode === 'reset' && (
+            <form onSubmit={handleResetPasswordSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-700 mb-1">
+                  Account Email Address
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  className="w-full px-3.5 py-2.5 bg-[#FAF8F5] border border-[#DDD7CD] rounded-md text-xs text-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-700 mb-1">
+                  New Password (min. 6 characters)
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    minLength={6}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    className="w-full pl-3.5 pr-10 py-2.5 bg-[#FAF8F5] border border-[#DDD7CD] rounded-md text-xs text-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 transition-colors p-1"
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={authLoading}
+                className="w-full py-3.5 bg-neutral-900 text-white rounded-full text-xs font-semibold tracking-wider hover:bg-black transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                {authLoading ? 'Updating Password...' : 'Save New Password & Sign In'}
+              </button>
+            </form>
+          )}
+
           <div className="pt-4 border-t border-[#EDE7DC] text-center text-xs text-neutral-600">
-            {authMode === 'login' ? (
+            {authMode === 'login' && (
               <p>
                 Don't have an account yet?{' '}
                 <button
@@ -300,7 +470,8 @@ export const AccountPage: React.FC<AccountPageProps> = ({ onNavigate, initialTab
                   Create one here
                 </button>
               </p>
-            ) : (
+            )}
+            {authMode === 'register' && (
               <p>
                 Already registered?{' '}
                 <button
@@ -315,9 +486,25 @@ export const AccountPage: React.FC<AccountPageProps> = ({ onNavigate, initialTab
                 </button>
               </p>
             )}
+            {authMode === 'reset' && (
+              <p>
+                Remembered your password?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode('login');
+                    setAuthError(null);
+                  }}
+                  className="font-semibold text-neutral-900 hover:underline"
+                >
+                  Back to Sign In
+                </button>
+              </p>
+            )}
           </div>
         </div>
       </div>
+
     );
   }
 

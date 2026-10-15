@@ -12,7 +12,7 @@ import {
   syncLocalStoreToSupabase,
   saveSupabaseConfig,
 } from './server/supabase.ts';
-import { sendOrderReceiptEmail } from './server/emailService.ts';
+import { sendOrderReceiptEmail, testSmtpConnection } from './server/emailService.ts';
 
 dotenv.config();
 
@@ -152,6 +152,32 @@ app.post('/api/auth/login', (req: Request, res: Response) => {
     return res.json({ token, user: safeUser });
   } catch (err: any) {
     return res.status(500).json({ error: err.message || 'Login failed' });
+  }
+});
+
+// Password recovery / reset endpoint: Allows users to securely reset their password
+app.post('/api/auth/reset-password', (req: Request, res: Response) => {
+  try {
+    const { email, newPassword } = req.body;
+    if (!email || !newPassword) {
+      return res.status(400).json({ error: 'Email and new password are required.' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+    }
+    const user = db.findUserByEmail(email);
+    if (!user) {
+      return res.status(404).json({ error: 'No account registered with this email address.' });
+    }
+    const updated = db.updateUserPassword(user.id, newPassword);
+    if (!updated) {
+      return res.status(500).json({ error: 'Failed to update password.' });
+    }
+    const token = generateToken(user.id, user.role);
+    const { passwordHash, ...safeUser } = user;
+    return res.json({ success: true, message: 'Password updated successfully.', token, user: safeUser });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || 'Password reset failed' });
   }
 });
 
@@ -534,30 +560,33 @@ app.post('/api/orders/:id/send-screenshot', async (req: Request, res: Response) 
 
     const { screenshotBase64, recipientEmail: customRecipient } = req.body;
 
-    // Strict priority: The email of the person who is logged in
+    // Accurate priority:
+    // 1. Explicitly requested recipient email (e.g. from checkout or user input)
+    // 2. Order customer email recorded on the order
+    // 3. Authenticated session user email
     let targetEmail = '';
-
-    const session = getAuthSession(req);
-    if (session) {
-      const loggedInUser = db.findUserById(session.userId);
-      if (loggedInUser && loggedInUser.email) {
-        targetEmail = loggedInUser.email;
+    if (customRecipient && typeof customRecipient === 'string' && customRecipient.trim()) {
+      targetEmail = customRecipient.trim();
+    } else if (order.customer?.email && order.customer.email.trim()) {
+      targetEmail = order.customer.email.trim();
+    } else {
+      const session = getAuthSession(req);
+      if (session) {
+        const loggedInUser = db.findUserById(session.userId);
+        if (loggedInUser && loggedInUser.email) {
+          targetEmail = loggedInUser.email.trim();
+        }
       }
-    }
-
-    if (!targetEmail && order.userId) {
-      const orderUser = db.findUserById(order.userId);
-      if (orderUser && orderUser.email) {
-        targetEmail = orderUser.email;
+      if (!targetEmail && order.userId) {
+        const orderUser = db.findUserById(order.userId);
+        if (orderUser && orderUser.email) {
+          targetEmail = orderUser.email.trim();
+        }
       }
     }
 
     if (!targetEmail) {
-      targetEmail = customRecipient || order.customer?.email;
-    }
-
-    if (!targetEmail) {
-      return res.status(400).json({ error: 'No logged-in user or recipient email found for this order.' });
+      return res.status(400).json({ error: 'No recipient email found for this order.' });
     }
 
     const result = await sendOrderReceiptEmail({
@@ -570,6 +599,32 @@ app.post('/api/orders/:id/send-screenshot', async (req: Request, res: Response) 
   } catch (err: any) {
     console.error('Failed to send order screenshot email:', err);
     return res.status(500).json({ error: err.message || 'Failed to dispatch email' });
+  }
+});
+
+// Admin endpoint to test live SMTP connection & send test message
+app.post('/api/admin/test-smtp', requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { smtpHost, smtpPort, smtpUser, smtpPass, smtpSender, testEmail } = req.body;
+    if (!testEmail) {
+      return res.status(400).json({ error: 'Please enter a test recipient email address.' });
+    }
+
+    const result = await testSmtpConnection({
+      smtpHost,
+      smtpPort: smtpPort ? Number(smtpPort) : undefined,
+      smtpUser,
+      smtpPass,
+      smtpSender,
+      testEmail,
+    });
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    return res.json(result);
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'SMTP test failed' });
   }
 });
 

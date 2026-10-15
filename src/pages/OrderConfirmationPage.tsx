@@ -57,8 +57,21 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
     }
   }, [orderId, order]);
 
-  // Determine recipient email (strictly user who is logged in, fallback to order customer)
-  const recipientEmail = user?.email || order?.customer?.email || '';
+  // Determine recipient email (order customer has highest priority, fallback to logged-in user)
+  const defaultEmail = order?.customer?.email || user?.email || '';
+  const [recipientEmail, setRecipientEmail] = useState<string>(defaultEmail);
+  const [isEditingEmail, setIsEditingEmail] = useState<boolean>(false);
+  const [customEmailInput, setCustomEmailInput] = useState<string>(defaultEmail);
+
+  useEffect(() => {
+    if (!recipientEmail) {
+      const email = order?.customer?.email || user?.email || '';
+      if (email) {
+        setRecipientEmail(email);
+        setCustomEmailInput(email);
+      }
+    }
+  }, [order, user, recipientEmail]);
 
   // Helper to render high quality canvas receipt fallback if needed
   const renderCanvasReceipt = (currentOrder: Order, targetEmail: string): string => {
@@ -258,8 +271,15 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
   };
 
   // Function to take screenshot and send email
-  const captureScreenshotAndSend = async (currentOrder: Order, isManualRetry = false) => {
+  const captureScreenshotAndSend = async (currentOrder: Order, emailOverride?: string) => {
     if (screenshotState === 'capturing' || screenshotState === 'sending') return;
+
+    const emailToSend = (emailOverride || recipientEmail || currentOrder.customer?.email || user?.email || '').trim();
+    if (!emailToSend) {
+      setScreenshotState('error');
+      setStatusMessage('Please enter an email address to receive the receipt.');
+      return;
+    }
 
     try {
       setScreenshotState('capturing');
@@ -284,13 +304,13 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
 
       // If toPng produced empty string or failed, use canvas receipt
       if (!dataUrl || !dataUrl.startsWith('data:image') || dataUrl.length < 100) {
-        dataUrl = renderCanvasReceipt(currentOrder, recipientEmail);
+        dataUrl = renderCanvasReceipt(currentOrder, emailToSend);
       }
 
       setScreenshotDataUrl(dataUrl);
 
       setScreenshotState('sending');
-      setStatusMessage(`Transmitting receipt screenshot to ${recipientEmail}...`);
+      setStatusMessage(`Transmitting receipt screenshot to ${emailToSend}...`);
 
       const token = localStorage.getItem('luxecarry_token');
       const res = await fetch(`/api/orders/${currentOrder.id}/send-screenshot`, {
@@ -301,15 +321,17 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
         },
         body: JSON.stringify({
           screenshotBase64: dataUrl,
-          recipientEmail,
+          recipientEmail: emailToSend,
         }),
       });
 
       const data = await res.json();
       if (res.ok) {
         setScreenshotState('sent');
+        const resolvedEmail = data.recipientEmail || emailToSend;
+        setRecipientEmail(resolvedEmail);
         setStatusMessage(
-          `Official order screenshot & invoice dispatched to ${data.recipientEmail || recipientEmail}`
+          `Official order screenshot & invoice dispatched to ${resolvedEmail}`
         );
       } else {
         setScreenshotState('error');
@@ -328,7 +350,7 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
       hasCapturedRef.current = true;
       // Slight delay for images to load
       const timer = setTimeout(() => {
-        captureScreenshotAndSend(order);
+        captureScreenshotAndSend(order, recipientEmail);
       }, 700);
       return () => clearTimeout(timer);
     }
@@ -421,8 +443,65 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
               </div>
               <p className="text-xs text-neutral-600 mt-1">
                 {statusMessage ||
-                  `A full screenshot and itemized invoice is dispatched to your logged-in account: ${recipientEmail}`}
+                  `A full screenshot and itemized invoice is dispatched to your account: ${recipientEmail}`}
               </p>
+
+              {/* Inline Recipient Email Modifier */}
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {!isEditingEmail ? (
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-neutral-500">Destination:</span>
+                    <span className="font-semibold text-neutral-900 bg-white px-2.5 py-1 rounded-md border border-[#E5DFD4] font-mono">
+                      {recipientEmail || 'No email specified'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomEmailInput(recipientEmail);
+                        setIsEditingEmail(true);
+                      }}
+                      className="text-xs text-[#A37B24] hover:underline font-medium"
+                    >
+                      Change Email
+                    </button>
+                  </div>
+                ) : (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (customEmailInput.trim()) {
+                        setRecipientEmail(customEmailInput.trim());
+                        setIsEditingEmail(false);
+                        captureScreenshotAndSend(order, customEmailInput.trim());
+                      }
+                    }}
+                    className="flex flex-wrap items-center gap-1.5"
+                  >
+                    <input
+                      type="email"
+                      required
+                      placeholder="Enter recipient email"
+                      value={customEmailInput}
+                      onChange={(e) => setCustomEmailInput(e.target.value)}
+                      className="px-2.5 py-1 text-xs bg-white border border-[#D5CDBD] rounded-md focus:outline-none focus:border-[#A37B24] font-mono min-w-[220px]"
+                    />
+                    <button
+                      type="submit"
+                      disabled={screenshotState === 'capturing' || screenshotState === 'sending'}
+                      className="px-3 py-1 bg-neutral-900 text-white rounded-md text-xs font-semibold hover:bg-black transition-colors disabled:opacity-50"
+                    >
+                      Send Receipt
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingEmail(false)}
+                      className="px-2.5 py-1 text-xs text-neutral-600 hover:text-neutral-900"
+                    >
+                      Cancel
+                    </button>
+                  </form>
+                )}
+              </div>
             </div>
           </div>
 
@@ -448,9 +527,9 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
             )}
 
             <button
-              onClick={() => captureScreenshotAndSend(order, true)}
+              onClick={() => captureScreenshotAndSend(order, recipientEmail)}
               disabled={screenshotState === 'capturing' || screenshotState === 'sending'}
-              className="px-3.5 py-2 bg-white border border-[#D5CDBD] text-neutral-700 rounded-lg text-xs font-medium hover:bg-neutral-50 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+              className="px-3.5 py-2 bg-white border border-[#D5CDBD] text-neutral-700 rounded-lg text-xs font-medium hover:bg-neutral-50 transition-colors flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
               title="Resend Screenshot to Email"
             >
               <RefreshCw

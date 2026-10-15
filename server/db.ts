@@ -1160,6 +1160,14 @@ class Database {
     return safeUser;
   }
 
+  public updateUserPassword(userId: string, newPassword: string): boolean {
+    const user = this.data.users.find((u) => u.id === userId);
+    if (!user) return false;
+    user.passwordHash = hashPassword(newPassword);
+    this.writeToDisk(this.data);
+    return true;
+  }
+
   // ===================
   // EMAIL NOTIFICATION LOGS
   // ===================

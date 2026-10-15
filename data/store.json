@@ -40,7 +40,7 @@
       "id": "usr_cust_2",
       "name": "Member",
       "email": "ra2826572@gmail.com",
-      "passwordHash": "24186afb1e0cec3f4c4d79633a1f7a5ca63c436e0d025e950ce5b5bf5e15a529",
+      "passwordHash": "5ae20224ca8e39cdcaf7a8bbbad50c3fd5730543467ccc8e7489b28ebd850ea1",
       "role": "customer",
       "phone": "+1 (555) 012-3456",
       "address": {
@@ -839,6 +839,22 @@
     "codEnabled": true
   },
   "emailLogs": [
+    {
+      "id": "email_1792071856983",
+      "orderId": "ORD-2026-1067",
+      "recipientEmail": "ra2826572@gmail.com",
+      "sentAt": "2026-10-15T13:44:16.983Z",
+      "status": "simulated",
+      "subject": "👜 LuxeCarry Order Confirmed #ORD-2026-1067 - Receipt & Screenshot"
+    },
+    {
+      "id": "email_1792071310268",
+      "orderId": "ORD-2026-1067",
+      "recipientEmail": "janjuau824@gmail.com",
+      "sentAt": "2026-10-15T13:35:10.268Z",
+      "status": "simulated",
+      "subject": "👜 LuxeCarry Order Confirmed #ORD-2026-1067 - Receipt & Screenshot"
+    },
     {
       "id": "email_1791976381491",
       "orderId": "ORD-2026-1067",
