@@ -115,7 +115,7 @@
           "sku": "LX-VRT-TAN-01",
           "price": 495,
           "salePrice": 445,
-          "stock": 14,
+          "stock": 13,
           "images": [
             "/src/assets/images/verona_tote_tan_1792074464504.jpg"
           ]
@@ -164,7 +164,7 @@
         }
       ],
       "createdAt": "2026-01-15T10:00:00.000Z",
-      "updatedAt": "2026-10-15T12:00:00.000Z"
+      "updatedAt": "2026-10-16T10:47:33.548Z"
     },
     {
       "id": "prod_florentine_flap_tote",
@@ -547,6 +547,51 @@
     }
   ],
   "orders": [
+    {
+      "id": "ORD-2026-6532",
+      "userId": null,
+      "customer": {
+        "fullName": "Rizwan Ahmad",
+        "email": "ra2826572@gmail.com",
+        "phone": "1234567890",
+        "street": "123 Luxury Ave",
+        "city": "London",
+        "postalCode": "W1K 6ZA",
+        "country": "United Kingdom"
+      },
+      "items": [
+        {
+          "productId": "prod_verona_tote",
+          "productName": "The Verona Structured Tote",
+          "variationId": "var_verona_tan",
+          "colorName": "Saddle Tan",
+          "colorCode": "#A0612F",
+          "sku": "LX-VRT-TAN-01",
+          "image": "/src/assets/images/verona_tote_tan_1792074464504.jpg",
+          "unitPrice": 445,
+          "quantity": 1,
+          "subtotal": 445
+        }
+      ],
+      "subtotal": 445,
+      "discountAmount": 0,
+      "couponCode": null,
+      "shippingCost": 0,
+      "totalAmount": 445,
+      "paymentMethod": "COD",
+      "paymentStatus": "Pending",
+      "status": "Pending",
+      "stockRestored": false,
+      "statusHistory": [
+        {
+          "status": "Pending",
+          "date": "2026-10-16T10:47:33.548Z",
+          "note": "Order received via Cash on Delivery."
+        }
+      ],
+      "createdAt": "2026-10-16T10:47:33.548Z",
+      "updatedAt": "2026-10-16T10:47:33.548Z"
+    },
     {
       "id": "ORD-2026-1067",
       "userId": "usr_1791976319349",
@@ -943,6 +988,22 @@
     "codEnabled": true
   },
   "emailLogs": [
+    {
+      "id": "email_1792148095897",
+      "orderId": "ORD-2026-1067",
+      "recipientEmail": "ra2826572@gmail.com",
+      "sentAt": "2026-10-16T10:54:55.897Z",
+      "status": "simulated",
+      "subject": "👜 LuxeCarry Order Confirmed #ORD-2026-1067 - Receipt & Screenshot"
+    },
+    {
+      "id": "email_1792147849828",
+      "orderId": "ORD-2026-1067",
+      "recipientEmail": "ra2826572@gmail.com",
+      "sentAt": "2026-10-16T10:50:49.828Z",
+      "status": "simulated",
+      "subject": "👜 LuxeCarry Order Confirmed #ORD-2026-1067 - Receipt & Screenshot"
+    },
     {
       "id": "email_1792071856983",
       "orderId": "ORD-2026-1067",

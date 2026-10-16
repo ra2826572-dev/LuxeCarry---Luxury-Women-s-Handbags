@@ -15,6 +15,9 @@ import {
   RefreshCw,
   Check,
   X,
+  Copy,
+  FileText,
+  Info,
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { Order } from '../types/index.ts';
@@ -41,6 +44,8 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
   const [screenshotState, setScreenshotState] = useState<
     'idle' | 'capturing' | 'sending' | 'sent' | 'error'
   >('idle');
+  const [deliveryStatus, setDeliveryStatus] = useState<'sent' | 'simulated' | 'error' | null>(null);
+  const [copiedReceipt, setCopiedReceipt] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [previewOpen, setPreviewOpen] = useState(false);
   const hasCapturedRef = useRef(false);
@@ -328,18 +333,27 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
       const data = await res.json();
       if (res.ok) {
         setScreenshotState('sent');
+        setDeliveryStatus(data.status || 'simulated');
         const resolvedEmail = data.recipientEmail || emailToSend;
         setRecipientEmail(resolvedEmail);
-        setStatusMessage(
-          `Official order screenshot & invoice dispatched to ${resolvedEmail}`
-        );
+        if (data.status === 'sent') {
+          setStatusMessage(
+            `Official order screenshot & invoice dispatched live to ${resolvedEmail} via SMTP.`
+          );
+        } else {
+          setStatusMessage(
+            `Receipt & high-definition screenshot generated and saved for ${resolvedEmail}.`
+          );
+        }
       } else {
         setScreenshotState('error');
+        setDeliveryStatus('error');
         setStatusMessage(data.error || 'Failed to dispatch screenshot to email.');
       }
     } catch (err: any) {
       console.error('Screenshot / email dispatch failed:', err);
       setScreenshotState('error');
+      setDeliveryStatus('error');
       setStatusMessage(err.message || 'Error capturing and emailing order receipt.');
     }
   };
@@ -367,11 +381,54 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
     document.body.removeChild(a);
   };
 
-  // Gmail direct web compose link
-  const openInGmailUrl = order
-    ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-        recipientEmail
-      )}&su=${encodeURIComponent(
+  // Copy full itemized text receipt to clipboard
+  const handleCopyReceipt = () => {
+    if (!order) return;
+    const itemsText = (order.items || [])
+      .map(
+        (item) =>
+          `• ${item.productName} (${item.colorName || 'Standard'}) x${item.quantity} - $${(item.unitPrice * item.quantity).toFixed(2)}`
+      )
+      .join('\n');
+
+    const receiptText = `LUXECARRY ATELIER COMMISSION RECEIPT
+========================================
+Order Reference: ${order.id}
+Date: ${new Date(order.createdAt).toLocaleDateString()}
+Status: Confirmed (${order.status.toUpperCase()})
+
+CUSTOMER DETAILS:
+Name: ${order.customer.fullName}
+Email: ${recipientEmail || order.customer.email}
+Phone: ${order.customer.phone}
+Address: ${order.customer.street}, ${order.customer.city}, ${order.customer.postalCode}, ${order.customer.country}
+${order.customer.deliveryInstructions ? `Delivery Note: ${order.customer.deliveryInstructions}\n` : ''}
+PAYMENT:
+Method: ${order.paymentMethod === 'COD' ? 'Cash on Delivery (COD)' : 'Credit Card'}
+
+ITEMIZED SILHOUETTES:
+${itemsText}
+
+TOTALS:
+Subtotal: $${order.subtotal.toFixed(2)}
+White Glove Delivery: ${order.shippingCost === 0 ? 'Complimentary' : `$${order.shippingCost.toFixed(2)}`}
+Total Commission: $${order.totalAmount.toFixed(2)}
+========================================
+LuxeCarry Atelier · Via de' Tornabuoni, 14, Firenze, Italy`;
+
+    navigator.clipboard.writeText(receiptText);
+    setCopiedReceipt(true);
+    setTimeout(() => setCopiedReceipt(false), 3000);
+  };
+
+  // Direct Gmail search in user inbox
+  const checkGmailUrl = `https://mail.google.com/mail/u/0/#search/${encodeURIComponent(
+    order?.id || 'LuxeCarry'
+  )}`;
+
+  // Mailto direct client link
+  const mailtoHref = order
+    ? `mailto:${encodeURIComponent(recipientEmail)}?subject=${encodeURIComponent(
         `LuxeCarry Order Receipt #${order.id}`
       )}&body=${encodeURIComponent(
         `Dear ${order.customer.fullName},\n\nYour LuxeCarry atelier commission #${order.id} for $${order.totalAmount.toFixed(
@@ -423,10 +480,17 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
                   Receipt Screenshot Dispatch
                 </span>
                 {screenshotState === 'sent' && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#EAF5EC] text-[#24542B] border border-[#CDE5D2]">
-                    <Check className="w-3 h-3" />
-                    Sent to {recipientEmail}
-                  </span>
+                  deliveryStatus === 'sent' ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#EAF5EC] text-[#24542B] border border-[#CDE5D2]">
+                      <Check className="w-3 h-3" />
+                      Sent via Live SMTP to {recipientEmail}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#FFF9E6] text-[#8C6D1F] border border-[#F2DEAC]">
+                      <FileText className="w-3 h-3" />
+                      Receipt Ready & Saved
+                    </span>
+                  )
                 )}
                 {(screenshotState === 'capturing' || screenshotState === 'sending') && (
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#FFF9E6] text-[#8C6D1F] border border-[#F2DEAC]">
@@ -445,6 +509,32 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
                 {statusMessage ||
                   `A full screenshot and itemized invoice is dispatched to your account: ${recipientEmail}`}
               </p>
+
+              {/* Informative helper card when SMTP is in simulated mode */}
+              {deliveryStatus === 'simulated' && (
+                <div className="mt-3.5 p-3.5 bg-white/90 rounded-xl border border-[#E5DFD4] text-xs text-neutral-600 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                  <div className="flex items-start gap-2.5">
+                    <Info className="w-4 h-4 text-[#A37B24] shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <span className="font-semibold text-neutral-900 block">
+                        Order Receipt & Image Saved in Archive
+                      </span>
+                      <p className="text-[11px] text-neutral-600 leading-relaxed">
+                        To deliver directly to your actual Gmail inbox, enter your SMTP credentials in Admin Dashboard → Store Settings. You can also download the receipt PNG or copy details below.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => onNavigate('admin')}
+                      className="px-3 py-1.5 bg-[#FAF8F5] border border-[#DDD5C7] rounded-lg text-xs font-semibold text-neutral-800 hover:bg-[#F2EEE5] transition-colors whitespace-nowrap"
+                    >
+                      Admin SMTP Settings →
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Inline Recipient Email Modifier */}
               <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -511,14 +601,14 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
               <>
                 <button
                   onClick={() => setPreviewOpen(true)}
-                  className="px-3.5 py-2 bg-white border border-[#D5CDBD] text-neutral-800 rounded-lg text-xs font-semibold hover:bg-neutral-50 transition-colors flex items-center gap-1.5 shadow-xs"
+                  className="px-3.5 py-2 bg-white border border-[#D5CDBD] text-neutral-800 rounded-lg text-xs font-semibold hover:bg-neutral-50 transition-colors flex items-center gap-1.5 shadow-2xs"
                 >
                   <Eye className="w-3.5 h-3.5 text-neutral-600" />
                   <span>View Screenshot</span>
                 </button>
                 <button
                   onClick={handleDownloadScreenshot}
-                  className="px-3.5 py-2 bg-neutral-900 text-white rounded-lg text-xs font-semibold hover:bg-black transition-colors flex items-center gap-1.5 shadow-xs"
+                  className="px-3.5 py-2 bg-neutral-900 text-white rounded-lg text-xs font-semibold hover:bg-black transition-colors flex items-center gap-1.5 shadow-2xs"
                 >
                   <Download className="w-3.5 h-3.5 text-[#D4AF37]" />
                   <span>Download (.PNG)</span>
@@ -527,9 +617,27 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
             )}
 
             <button
+              onClick={handleCopyReceipt}
+              className="px-3.5 py-2 bg-white border border-[#D5CDBD] text-neutral-700 rounded-lg text-xs font-medium hover:bg-neutral-50 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+              title="Copy complete itemized order receipt"
+            >
+              {copiedReceipt ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-[#24542B]" />
+                  <span className="text-[#24542B] font-semibold">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5 text-neutral-600" />
+                  <span>Copy Receipt</span>
+                </>
+              )}
+            </button>
+
+            <button
               onClick={() => captureScreenshotAndSend(order, recipientEmail)}
               disabled={screenshotState === 'capturing' || screenshotState === 'sending'}
-              className="px-3.5 py-2 bg-white border border-[#D5CDBD] text-neutral-700 rounded-lg text-xs font-medium hover:bg-neutral-50 transition-colors flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+              className="px-3.5 py-2 bg-white border border-[#D5CDBD] text-neutral-700 rounded-lg text-xs font-medium hover:bg-neutral-50 transition-colors flex items-center gap-1.5 disabled:opacity-50 cursor-pointer shadow-2xs"
               title="Resend Screenshot to Email"
             >
               <RefreshCw
@@ -539,18 +647,28 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
                     : ''
                 }`}
               />
-              <span>Resend Email</span>
+              <span>Resend</span>
             </button>
 
             <a
-              href={openInGmailUrl}
+              href={checkGmailUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-3.5 py-2 bg-[#F6F4F0] border border-[#DDD5C7] text-neutral-700 rounded-lg text-xs font-medium hover:bg-[#EFECE5] transition-colors flex items-center gap-1.5"
+              className="px-3.5 py-2 bg-[#F6F4F0] border border-[#DDD5C7] text-neutral-700 rounded-lg text-xs font-medium hover:bg-[#EFECE5] transition-colors flex items-center gap-1.5 shadow-2xs"
+              title="Search your Gmail inbox for this commission"
             >
               <Mail className="w-3.5 h-3.5 text-red-600" />
-              <span>Open in Gmail</span>
+              <span>Check Gmail</span>
               <ExternalLink className="w-3 h-3 text-neutral-400" />
+            </a>
+
+            <a
+              href={mailtoHref}
+              className="px-3.5 py-2 bg-white border border-[#D5CDBD] text-neutral-700 rounded-lg text-xs font-medium hover:bg-neutral-50 transition-colors flex items-center gap-1.5 shadow-2xs"
+              title="Open receipt in your default mail app"
+            >
+              <Mail className="w-3.5 h-3.5 text-neutral-500" />
+              <span>Mail App</span>
             </a>
           </div>
         </div>

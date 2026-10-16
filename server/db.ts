@@ -827,12 +827,21 @@ class Database {
         return { success: false, error: `Invalid quantity for item.` };
       }
 
-      const product = this.data.products.find((p) => p.id === reqItem.productId);
+      let product = this.data.products.find((p) => p.id === reqItem.productId);
+      if (!product) {
+        product = this.data.products.find(
+          (p) => p.slug === reqItem.productId || p.name.toLowerCase() === reqItem.productId.toLowerCase()
+        );
+      }
       if (!product || !product.active) {
         return { success: false, error: `Product not found or currently unavailable.` };
       }
 
-      const variation = product.variations.find((v) => v.id === reqItem.variationId);
+      let variation = product.variations.find((v) => v.id === reqItem.variationId);
+      if (!variation) {
+        // Fallback to match by stock or first variation if user has stale cart from previous catalog
+        variation = product.variations.find((v) => v.stock >= reqItem.quantity) || product.variations[0];
+      }
       if (!variation) {
         return {
           success: false,

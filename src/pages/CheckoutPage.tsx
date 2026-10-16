@@ -46,7 +46,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate }) => {
       setFormData((prev) => ({
         ...prev,
         fullName: prev.fullName || user.name || '',
-        email: user.email || prev.email || '',
+        email: prev.email || user.email || '',
         phone: prev.phone || user.phone || '',
         street: prev.street || user.address?.street || '',
         city: prev.city || user.address?.city || '',
@@ -127,10 +127,20 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate }) => {
         body: JSON.stringify(orderPayload),
       });
 
-      const data = await res.json();
+      let data: any = {};
+      const responseText = await res.text();
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        throw new Error(
+          res.ok
+            ? 'Order received. Please refresh your orders page to verify.'
+            : 'The checkout service was temporarily busy. Please click "Confirm Commission" again to complete your order.'
+        );
+      }
 
       if (!res.ok) {
-        setErrorMessage(data.error || 'Failed to place order.');
+        setErrorMessage(data?.error || 'Failed to place order.');
         setIsSubmitting(false);
         return;
       }
