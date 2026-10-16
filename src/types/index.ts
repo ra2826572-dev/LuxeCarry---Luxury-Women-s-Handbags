@@ -33,7 +33,8 @@ export interface ProductReview {
   rating: number; // 1-5
   date: string;
   comment: string;
-  verifiedPurchase: boolean;
+  title?: string;
+  verifiedPurchase?: boolean;
 }
 
 export interface Product {

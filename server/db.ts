@@ -248,7 +248,7 @@ const initialSeedData: DatabaseSchema = {
           salePrice: 445,
           stock: 14,
           images: [
-            '/src/assets/images/bag_verona_tote_tan_1791892799506.jpg',
+            '/src/assets/images/verona_tote_tan_1792074464504.jpg',
           ],
         },
         {
